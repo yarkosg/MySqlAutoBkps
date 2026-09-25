@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Claves de cifrado y credenciales sensibles (NUNCA SUBIR A GIT)
+config/
+*.pem
+*.key
+.env
+
+# Archivos de respaldos generados y volcados
+backups/
+*.sql
+*.sql.gz
+*.sql.zst
+*.binlog
+*.bak
+
+# Logs
+logs/
+*.log
+
+# Entornos virtuales e IDEs
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.DS_Store
