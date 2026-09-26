@@ -26,6 +26,8 @@
 ## ✨ Características Principales
 
 - **100% Autónomo (Sin requerir MySQL instalado en tu PC/laptop)**: Incluye un **Motor Nativo en Python Puro** que extrae el 100% de la base de datos (Estructuras, Datos, Vistas, Procedimientos, Triggers y Eventos) directamente por protocolo de red, garantizando compatibilidad absoluta con cualquier versión de MySQL (5.0, 5.5, 5.6, 5.7, 8.0, 8.4, 9.0+) y MariaDB sin requerir `mysqldump` ni MySQL local.
+- **Automatización Nativa en Windows (Windows Task Scheduler)**: Permite registrar tareas automáticas autoejecutables en el Programador de Tareas de Windows. **Se ejecutan puntualmente en segundo plano incluso cuando el programa está 100% cerrado**, usando `pythonw.exe` de forma totalmente silenciosa e invisible.
+- **Administración y Modificación desde la Interfaz**: Al abrir el programa, puedes ver el estado real de tus tareas de Windows, sincronizarlas, modificarlas (`✏️ Editar`), pausarlas, activarlas, o quitarlas con 1 clic.
 - **Agrupación Inteligente Servidor-Bases de Datos**: Agrupa múltiples bases de datos bajo cada servidor configurado (Host, Puerto, Usuario, SSL y notas).
 - **Importación Directa desde MySQL Workbench**: Detecta automáticamente tu archivo `connections.xml` de Workbench, listando tus conexiones configuradas para agregarlas con 1 clic.
 - **Auto-descubrimiento en 1 Clic**: Consulta el servidor mediante `SHOW DATABASES` y permite importar todas las bases de datos con casillas de selección sin escribirlas a mano.
@@ -33,7 +35,6 @@
 - **Compresión en Streaming (`.sql.gz`)**: Comprime al vuelo sin saturar la RAM y calcula el hash de integridad SHA-256 en una sola pasada de I/O.
 - **Seguridad Cero Contraseñas en Claro**: Cifrado local con **Fernet (AES-128-CBC + HMAC-SHA256)** y paso seguro de credenciales mediante `--defaults-extra-file` (nunca expone contraseñas en la lista de procesos de Windows/Linux).
 - **Auto-inicialización Silenciosa**: Si descargas o clonas el proyecto sin archivos de configuración ni claves, la aplicación genera silenciosamente la clave maestra local (`config/.key`) y las configuraciones base sin interrumpir al usuario.
-- **Planificador en Segundo Plano (APScheduler)**: Automatiza respaldos por intervalos (horas/días) o expresiones cron sin congelar la ventana.
 - **Políticas de Retención Automática**: Depura automáticamente copias antiguas según antigüedad en días o número máximo de versiones por base de datos, protegiendo cadenas incrementales activas.
 - **Consola de Operaciones en Vivo**: Monitoriza la actividad en tiempo real con colores diferenciados por nivel (Éxito, Información, Advertencia, Error).
 
@@ -150,10 +151,13 @@ MySqlAutoBkps implementa una cadena de respaldo estructurada:
 2. **Ejecutar Respaldos**:
    - **Manual**: Haz clic en `Full` o `Incr.` junto a cada base de datos, o usa `Respaldar Servidor` / `Respaldar Todo`.
    - Observa la barra de progreso y los registros en la **Consola de Operaciones en Vivo**.
-3. **Programar Tareas Automáticas**:
+3. **Programar Tareas Automáticas (Windows Task Scheduler)**:
    - Dirígete a la pestaña **⏰ Programador**.
-   - Haz clic en `+ Programar Tarea`, define la frecuencia (ej. Diario a las 02:00 o cada N horas), el tipo (Full o Incremental) y actívala.
-   - El motor en segundo plano ejecutará los respaldos de forma desatendida.
+   - Haz clic en `+ Programar Tarea`.
+   - Selecciona el servidor, la base de datos (o todas), el tipo (Full o Incremental) y la hora/frecuencia de ejecución.
+   - Marca la casilla **`🪟 Instalar como Tarea de Windows`** para que la tarea se registre en el Programador de Tareas del sistema operativo.
+   - **¡Listo!** El respaldo se ejecutará puntualmente en segundo plano a la hora indicada, **incluso si cierras la aplicación por completo**.
+   - Al volver a abrir la aplicación, podrás ver el distintivo `🪟 Windows: Activa (Sin app)`, editar sus parámetros con `✏️ Editar`, pausarla con el switch, o desinstalarla con 1 clic.
 4. **Verificar Integridad**:
    - En la pestaña **📜 Historial & Restaurar**, haz clic en `📖 phpMyAdmin Guía` sobre cualquier respaldo para consultar las instrucciones y validar su hash SHA-256 contra manipulaciones.
 

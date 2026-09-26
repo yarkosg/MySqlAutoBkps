@@ -19,6 +19,8 @@ class BackupJob:
     interval_minutes: int = 1440  # Por defecto cada 24 horas (1440 min)
     cron_expression: Optional[str] = None
     is_active: bool = True
+    windows_task_installed: bool = False
+    start_time_str: str = "02:00"
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     last_run_time: Optional[str] = None
     next_run_time: Optional[str] = None
@@ -35,6 +37,8 @@ class BackupJob:
             "interval_minutes": self.interval_minutes,
             "cron_expression": self.cron_expression,
             "is_active": self.is_active,
+            "windows_task_installed": self.windows_task_installed,
+            "start_time_str": self.start_time_str,
             "last_run_time": self.last_run_time,
             "next_run_time": self.next_run_time,
             "last_status": self.last_status
@@ -55,6 +59,8 @@ class BackupJob:
             interval_minutes=int(data.get("interval_minutes", 1440)),
             cron_expression=data.get("cron_expression"),
             is_active=bool(data.get("is_active", True)),
+            windows_task_installed=bool(data.get("windows_task_installed", False)),
+            start_time_str=data.get("start_time_str", "02:00"),
             last_run_time=data.get("last_run_time"),
             next_run_time=data.get("next_run_time"),
             last_status=data.get("last_status")

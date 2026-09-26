@@ -8,6 +8,7 @@ import customtkinter as ctk
 from src.models.backup_job import BackupJob
 from src.models.manifest import BackupType
 from src.models.server import ServerConfig
+from src.services.windows_scheduler_service import WindowsSchedulerService
 from src.ui.theme import (
     ACCENT_PRIMARY, ACCENT_SUCCESS, BG_CARD, BG_INPUT,
     BG_MAIN, BORDER_COLOR, FONT_BODY_BOLD, FONT_SMALL,
@@ -115,10 +116,29 @@ class ScheduleDialog(ctk.CTkToplevel):
         # Campo personalizado (minutos o cron)
         self.custom_entry = ctk.CTkEntry(form, placeholder_text="Minutos o expresión cron", fg_color=BG_INPUT, border_color=BORDER_COLOR)
 
+        # Hora de ejecución fija
+        self.time_row = ctk.CTkFrame(form, fg_color="transparent")
+        self.time_row.pack(fill="x", padx=16, pady=(0, 10))
+
+        ctk.CTkLabel(self.time_row, text="Hora programada (Formato 24h ej: 02:00, 23:30):", font=FONT_SMALL, text_color=TEXT_MUTED).pack(side="left")
+        self.time_entry = ctk.CTkEntry(self.time_row, width=90, placeholder_text="02:00", fg_color=BG_INPUT, border_color=BORDER_COLOR)
+        self.time_entry.insert(0, "02:00")
+        self.time_entry.pack(side="right")
+
+        # Integración con Windows Task Scheduler
+        self.windows_task_chk = ctk.CTkCheckBox(
+            form,
+            text="🪟 Instalar como Tarea de Windows (Windows Task Scheduler)\n    Se ejecutará automáticamente en segundo plano aunque este programa esté cerrado",
+            font=FONT_SMALL,
+            fg_color="#10B981"
+        )
+        self.windows_task_chk.select()
+        self.windows_task_chk.pack(anchor="w", padx=16, pady=(4, 10))
+
         # Activar/Desactivar
         self.active_check = ctk.CTkCheckBox(form, text="Tarea Activa y Habilitada", font=FONT_SMALL, fg_color=ACCENT_PRIMARY)
         self.active_check.select()
-        self.active_check.pack(anchor="w", padx=16, pady=(10, 14))
+        self.active_check.pack(anchor="w", padx=16, pady=(4, 14))
 
         if self.servers:
             self._update_db_choices(self.servers[0])
@@ -176,11 +196,20 @@ class ScheduleDialog(ctk.CTkToplevel):
         else:
             self.type_combo.set("FULL (Completo 100%)")
 
+        if job.start_time_str:
+            self.time_entry.delete(0, "end")
+            self.time_entry.insert(0, job.start_time_str)
+
+        if job.windows_task_installed or WindowsSchedulerService.is_task_installed(job.id):
+            self.windows_task_chk.select()
+        else:
+            self.windows_task_chk.deselect()
+
         if not job.is_active:
             self.active_check.deselect()
 
     def _save(self) -> None:
-        """Guarda la tarea programada."""
+        """Guarda la tarea programada y la registra en Windows Task Scheduler si corresponde."""
         server = self._get_selected_server()
         if not server:
             return
@@ -213,6 +242,8 @@ class ScheduleDialog(ctk.CTkToplevel):
             cron_expr = self.custom_entry.get().strip() or "0 2 * * *"
 
         is_active = bool(self.active_check.get())
+        start_time = self.time_entry.get().strip() or "02:00"
+        should_install_windows = bool(self.windows_task_chk.get())
 
         job_id = self.job.id if self.job else None
         job = BackupJob(
@@ -222,10 +253,21 @@ class ScheduleDialog(ctk.CTkToplevel):
             backup_type=b_type,
             interval_minutes=interval_min,
             cron_expression=cron_expr,
-            is_active=is_active
+            is_active=is_active,
+            windows_task_installed=should_install_windows,
+            start_time_str=start_time
         )
         if job_id:
             job.id = job_id
+
+        # Gestionar instalación/desinstalación en Windows Task Scheduler
+        if should_install_windows and job.is_active:
+            ok, msg = WindowsSchedulerService.install_job(job)
+            if not ok:
+                app_logger.warning(f"Aviso al instalar en Windows: {msg}")
+        else:
+            if self.job and (self.job.windows_task_installed or WindowsSchedulerService.is_task_installed(self.job.id)):
+                WindowsSchedulerService.uninstall_job(job.id)
 
         if self.on_save_callback:
             self.on_save_callback(job)

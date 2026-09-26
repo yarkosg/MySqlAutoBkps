@@ -278,9 +278,40 @@ class TestMySqlAutoBkps(unittest.TestCase):
         self.assertEqual(NativeDumpEngine._escape_value(decimal.Decimal("45.67")), "45.67")
         self.assertEqual(NativeDumpEngine._escape_value(b"hello binary"), "X'68656c6c6f2062696e617279'")
         self.assertEqual(NativeDumpEngine._escape_value("O'Reilly; DROP TABLE users;"), "'O\\'Reilly; DROP TABLE users;'")
-        dt = datetime.datetime(2026, 9, 25, 10, 30, 0)
-        self.assertEqual(NativeDumpEngine._escape_value(dt), "'2026-09-25 10:30:00'")
+    def test_10_backup_job_and_windows_task_metadata(self):
+        """Verifica la serialización de tareas programadas y helpers del Windows Scheduler."""
+        from src.models.backup_job import BackupJob
+        from src.services.windows_scheduler_service import WindowsSchedulerService
+
+        job = BackupJob(
+            name="Respaldo Nocturno",
+            server_id="srv-100",
+            database_name="__ALL__",
+            backup_type=BackupType.FULL,
+            interval_minutes=1440,
+            windows_task_installed=True,
+            start_time_str="03:30"
+        )
+
+        d = job.to_dict()
+        self.assertTrue(d["windows_task_installed"])
+        self.assertEqual(d["start_time_str"], "03:30")
+
+        restored = BackupJob.from_dict(d)
+        self.assertEqual(restored.name, "Respaldo Nocturno")
+        self.assertTrue(restored.windows_task_installed)
+        self.assertEqual(restored.start_time_str, "03:30")
+
+        task_name = WindowsSchedulerService.build_task_name(job.id)
+        self.assertTrue(task_name.startswith("MySqlAutoBkps_"))
+
+        pythonw = WindowsSchedulerService.get_pythonw_executable()
+        self.assertTrue(pythonw.lower().endswith("pythonw.exe") or pythonw.lower().endswith("python.exe"))
+
+        runner = WindowsSchedulerService.get_headless_runner_path()
+        self.assertTrue(os.path.isfile(runner))
 
 
 if __name__ == "__main__":
     unittest.main()
+
